@@ -35,6 +35,10 @@ class Tweet(snscrape.base.Item):
 	conversationId: int
 	lang: str
 	source: str
+
+	hashtags: typing.Optional[list] = None
+	inReplyToUserId: typing.Optional[int] = None
+	inReplyToStatusId: typing.Optional[int] = None
 	sourceUrl: typing.Optional[str] = None
 	sourceLabel: typing.Optional[str] = None
 	media: typing.Optional[typing.List['Medium']] = None
@@ -325,8 +329,8 @@ class TwitterAPIScraper(snscrape.base.Scraper):
 		kwargs['renderedContent'] = self._render_text_with_urls(tweet['full_text'], tweet['entities'].get('urls'))
 		kwargs['user'] = self._user_to_user(obj['globalObjects']['users'][tweet['user_id_str']])
 		kwargs['date'] = email.utils.parsedate_to_datetime(tweet['created_at'])
-		kwargs['outlinks'] = [u['expanded_url'] for u in tweet['entities']['urls']] if 'urls' in tweet['entities'] else []
-		kwargs['tcooutlinks'] = [u['url'] for u in tweet['entities']['urls']] if 'urls' in tweet['entities'] else []
+		kwargs['outlinks'] = [u['expanded_url'] for u in tweet['entities']['urls']] if 'urls' in tweet['entities'] else None
+		kwargs['tcooutlinks'] = [u['url'] for u in tweet['entities']['urls']] if 'urls' in tweet['entities'] else None
 		kwargs['url'] = f'https://twitter.com/{obj["globalObjects"]["users"][tweet["user_id_str"]]["screen_name"]}/status/{kwargs["id"]}'
 		kwargs['replyCount'] = tweet['reply_count']
 		kwargs['retweetCount'] = tweet['retweet_count']
@@ -335,6 +339,9 @@ class TwitterAPIScraper(snscrape.base.Scraper):
 		kwargs['conversationId'] = tweet['conversation_id'] if 'conversation_id' in tweet else int(tweet['conversation_id_str'])
 		kwargs['lang'] = tweet['lang']
 		kwargs['source'] = tweet['source']
+		kwargs['hashtags'] = [t['text'] for t in tweet['entities']['hashtags']] if 'hashtags' in tweet['entities'] else None
+		kwargs['inReplyToUserId'] = tweet['in_reply_to_user_id_str']
+		kwargs['inReplyToStatusId'] = tweet['in_reply_to_status_id_str']
 		if (match := re.search(r'href=[\'"]?([^\'" >]+)', tweet['source'])):
 			kwargs['sourceUrl'] = match.group(1)
 		if (match := re.search(r'>([^<]*)<', tweet['source'])):
